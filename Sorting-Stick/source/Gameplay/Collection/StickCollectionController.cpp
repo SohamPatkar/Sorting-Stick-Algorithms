@@ -166,13 +166,18 @@ namespace Gameplay
 				break;
 
 			case Gameplay::Collection::SortType::SELECTION_SORT:
-				time_complexity = "O(n log n)";
+				time_complexity = "O(n^2)";
 				sort_thread = std::thread(&StickCollectionController::processSelectionSort, this);
 				break;
 
 			case Gameplay::Collection::SortType::MERGE_SORT:
-				time_complexity = "O(n^2)";
+				time_complexity = "O(n log n)";
 				sort_thread = std::thread(&StickCollectionController::processMergeSort, this);
+				break;
+
+			case Gameplay::Collection::SortType::QUICK_SORT:
+				time_complexity = "O(n log n)";
+				sort_thread = std::thread(&StickCollectionController::processQuickSort, this);
 				break;
 
 			}
@@ -451,6 +456,65 @@ namespace Gameplay
 		void StickCollectionController::processMergeSort()
 		{
 			mergeSort(0, sticks.size() - 1);
+			setCompletedColor();
+		}
+
+		int StickCollectionController::partition(int low, int high)
+		{
+			Sound::SoundService* sound = Global::ServiceLocator::getInstance()->getSoundService();
+			Stick* pivot = sticks[high];
+			int idx = low - 1;
+
+			for (int j = low; j < high; j++)
+			{
+				sticks[j]->stick_view->setFillColor(collection_model->processing_element_color);
+
+				number_of_array_access++;
+				number_of_comparisons++;
+
+				if (sticks[j]->data < pivot->data)
+				{
+					idx++;
+					std::swap(sticks[idx], sticks[j]);
+					number_of_array_access += 3;
+					sound->playSound(Sound::SoundType::COMPARE_SFX);
+
+					updateStickPosition();
+					std::this_thread::sleep_for(std::chrono::milliseconds(current_operation_delay));
+				}
+
+				sticks[j]->stick_view->setFillColor(collection_model->element_color);
+			}
+
+			idx++;
+			std::swap(sticks[idx], sticks[high]);
+			number_of_array_access += 3;
+
+			updateStickPosition();
+
+			return idx;
+		}
+
+		void StickCollectionController::quickSort(int low, int high)
+		{
+			if (low < high)
+			{
+				int p = partition(low, high);
+
+				quickSort(low, p - 1);
+				quickSort(p + 1, high);
+
+				for (int i = low; i <= high; i++) {
+					sticks[i]->stick_view->setFillColor(collection_model->placement_position_element_color);
+					updateStickPosition();
+				}
+
+			}
+		}
+
+		void StickCollectionController::processQuickSort()
+		{
+			quickSort(0, sticks.size() - 1);
 			setCompletedColor();
 		}
 
