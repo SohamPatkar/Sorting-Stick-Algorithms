@@ -535,31 +535,38 @@ namespace Gameplay
 			Sound::SoundService* sound = Global::ServiceLocator::getInstance()->getSoundService();
 
 			std::vector<Stick*> output(sticks.size());
-			std::vector<int> count = { 0 };
+			std::vector<int> count(10, 0);
 
-			for (int i = 0; i < sticks.size(); i++)
-			{
-				count[(sticks[i]->data/exponent) % 10]++;
+			for (int i = 0; i < sticks.size(); ++i) {
+				sound->playSound(Sound::SoundType::COMPARE_SFX);
+				int digit = (sticks[i]->data / exponent) % 10;
+				count[digit]++;
+				number_of_array_access++;
+				sticks[i]->stick_view->setFillColor(collection_model->processing_element_color);
+				std::this_thread::sleep_for(std::chrono::milliseconds(current_operation_delay / 2)); // Delay for visual processing
+				sticks[i]->stick_view->setFillColor(collection_model->element_color);  // Reset color after processing
 			}
 
-
-			for (int i = 0; i < count.size(); i++)
-			{
+			for (int i = 1; i < 10; ++i) {
 				count[i] += count[i - 1];
 			}
 
-			for (int i = sticks.size() - 1; i >= 0; i--) {
-				output[count[(sticks[i]->data / exponent) % 10] - 1] = sticks[i];
-				sticks[i]->stick_view->setFillColor(collection_model->processing_element_color);
-				count[(sticks[i]->data / exponent) % 10]--;
+
+			for (int i = sticks.size() - 1; i >= 0; --i) {
+
+				int digit = (sticks[i]->data / exponent) % 10;
+				output[count[digit] - 1] = sticks[i];
+				output[count[digit] - 1]->stick_view->setFillColor(collection_model->processing_element_color);
+				count[digit]--;
 				number_of_array_access++;
+
 			}
 
-			for (int i = 0; i < sticks.size(); i++)
-			{
+			for (int i = 0; i < sticks.size(); ++i) {
 				sticks[i] = output[i];
-				sticks[i]->stick_view->setFillColor(collection_model->placement_position_element_color);
+				sticks[i]->stick_view->setFillColor(collection_model->placement_position_element_color);  
 				updateStickPosition(i);
+				std::this_thread::sleep_for(std::chrono::milliseconds(current_operation_delay)); 
 			}
 
 		}
