@@ -184,7 +184,7 @@ namespace Gameplay
 				break;
 
 			case Gameplay::Collection::SortType::QUICK_SORT:
-				time_complexity = "O(n log n)";
+				time_complexity = "O(w * (n + k))";
 				sort_thread = std::thread(&StickCollectionController::processQuickSort, this);
 				break;
 
